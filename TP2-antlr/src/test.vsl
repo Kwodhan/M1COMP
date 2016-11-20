@@ -1,0 +1,26 @@
+PROTO INT fuck(a,v)
+FUNC VOID main(a,b){
+INT n,i,sqd
+
+n:=2+2
+i:=n+2
+{INT a,b
+
+IF n-1
+THEN
+{
+	WHILE 1
+	DO{
+	READ n
+	PRINT "hello :",n
+	n:=n+1
+	}
+	DONE
+}
+ELSE
+	n:=1
+FI
+i:=n+2
+
+}
+}

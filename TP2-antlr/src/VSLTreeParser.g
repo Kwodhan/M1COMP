@@ -4,6 +4,7 @@ options {
   language     = Java;
   tokenVocab   = VSLParser;
   ASTLabelType = CommonTree;
+	
 }
 
 
@@ -13,7 +14,8 @@ s [SymbolTable symTab] returns [Code3a code]
     ;
 
 program [SymbolTable symTab] returns [Code3a code]
-    : ^(PROG (u=unit[symTab] {code = $u.code;})+)
+@init { code = new Code3a();}
+    : ^(PROG (u=unit[symTab] {code.append($u.code);})+)
     ;
 
 unit [SymbolTable symTab] returns [Code3a code]
@@ -50,12 +52,10 @@ proto [SymbolTable symTab] returns [Code3a code]
 	 {
 	LabelSymbol l1 = new LabelSymbol($IDENT.text);
 	FunctionType ft1 = new FunctionType($t1.returnType);
-	/*ajouter param dans ft1*/
-	
-	
 	}
 	pl=param_list[symTab,ft1]{
 	FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
+
 	symTab.insert($IDENT.text,fs1);
 	})
     ;
@@ -99,30 +99,17 @@ declaration [SymbolTable symTab] returns [Code3a code]
 
 decl_item [SymbolTable symTab] returns [Code3a code]
     : IDENT {
-			Operand3a id = symTab.lookup($IDENT.text);
-			if(id!=null && id.getScope() == symTab.getScope()&& id.isVarInteger()){
-				Errors.redefinedIdentifier($IDENT,$IDENT.text,"");
-			}
-			else{
-				int i = symTab.getScope();
-				VarSymbol op = new VarSymbol(Type.INT,$IDENT.text,i);
-				Code3a cod = Code3aGenerator.genVar(op);
-				symTab.insert($IDENT.text,op);
-				code = cod;		
-			}
-			}
+		Operand3a id = symTab.lookup($IDENT.text);
+		if(TypeCheck.checkIdentDecla(id,$IDENT,$IDENT.text,symTab)){
+			code = Code3aGenerator.genDeclaINT($IDENT.text,symTab);
+		}
+	}
 	|^(ARDECL IDENT INTEGER{
-	Operand3a id = symTab.lookup($IDENT.text);
-			if(id!=null && id.getScope() == symTab.getScope() && id.isVarInteger()){
-				Errors.redefinedIdentifier($IDENT,$IDENT.text,"");
-			}
-			else{
-				int i = symTab.getScope();
-				VarSymbol op = new VarSymbol(Type.INT,$IDENT.text,i);
-				Code3a cod = Code3aGenerator.genVar(op);
-				symTab.insert($IDENT.text,op);
-				code = cod;		
-			}	
+		Operand3a id = symTab.lookup($IDENT.text);
+		if(TypeCheck.checkIdentDecla(id,$IDENT,$IDENT.text,symTab)){
+			code =  Code3aGenerator.genDeclaTab($IDENT.text,$INTEGER.int,symTab);
+		}
+			
 	}
 	)
     ;
@@ -132,18 +119,23 @@ inst_list [SymbolTable symTab] returns [Code3a code]
 	^(INST (s1=statement[symTab] {code.append($s1.code);} )+)
 	;
 
-statement [SymbolTable symTab] returns [Code3a code]
-@init { code = new Code3a();}
-    :
-	^(ASSIGN_KW e1=expression[symTab] IDENT){
-		// verif si variable  existe
-		Operand3a id = symTab.lookup($IDENT.text);
-		if(id!=null && id.isVarInteger())
-      		code = Code3aGenerator.genAff(Inst3a.TAC.COPY,id,$e1.expAtt);
-		else 
-			Errors.unknownIdentifier($IDENT,$IDENT.text,"");
+
+affectation [ExpAttribute expAtt,SymbolTable symTab] returns [Code3a code]
+	:
+	 (IDENT { Operand3a id = symTab.lookup($IDENT.text);
+		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))  	
+			code = Code3aGenerator.genAff(id,expAtt);	
+		
+	} 
+	| (ae=array_elem[symTab]){
+	 code = Code3aGenerator.genAffTab($ae.id,$ae.expAtt,expAtt);
 	}
-	|b1=block[symTab] { code = $b1.code; }
+	)
+	;
+statement [SymbolTable symTab] returns [Code3a code]
+@init { code = new Code3a();} :
+	^(ASSIGN_KW e1=expression[symTab] a1=affectation[e1,symTab]){code = $a1.code;}
+	
     | ^(IF_KW e1=expression[symTab] st1=statement[symTab] {
 
 		LabelSymbol l1 = SymbDistrib.newLabel();
@@ -152,6 +144,7 @@ statement [SymbolTable symTab] returns [Code3a code]
 		LabelSymbol l2 = SymbDistrib.newLabel();
 		code.append(Code3aGenerator.genGoto(Inst3a.TAC.GOTO, l2));
 		code.append(Code3aGenerator.genLabel(l1));
+		
 	}  
 
 	(st2=statement[symTab] {code.append($st2.code);})? 
@@ -161,40 +154,61 @@ statement [SymbolTable symTab] returns [Code3a code]
 	)
 	|^(WHILE_KW e1=expression[symTab] st1=statement[symTab] 
 	{
-	LabelSymbol l1 = SymbDistrib.newLabel();
-	LabelSymbol l2 = SymbDistrib.newLabel();
-	code = Code3aGenerator.genLabel(l1);
-	code.append(Code3aGenerator.genIfz(Inst3a.TAC.IFZ,l2,e1)); 
-	code.append($st1.code);
-	code.append(Code3aGenerator.genGoto(Inst3a.TAC.GOTO, l1));
-	code.append(Code3aGenerator.genLabel(l2));
+		code = Code3aGenerator.genWhile(e1,$st1.code);
 	} 
 	)
+	| ^(FCALL_S IDENT {
+		Operand3a id = symTab.lookup($IDENT.text);
+		Code3a cod = new Code3a();
+		int k=0;
+	} 
+	(al=argument_list[symTab] {
+		cod.append($al.code);
+		k=$al.nb;
+	}
+	)? 
+	{
+		if(((FunctionType) id.type).getArguments().size()!=k){
+			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
+			code=null;
+		}
+		if(TypeCheck.checkFunction(id,$IDENT,$IDENT.text)){
+			cod.append(Code3aGenerator.genCall(id));
+			code=cod;		
+		}
+			
+	}
+	)
+	| ^(RETURN_KW e1=expression[symTab] {code.append(Code3aGenerator.genReturn(e1));} )
 	| ^(PRINT_KW (p1=print_item[symTab] { code.append($p1.code);})+)
     | ^(READ_KW (r1=read_item[symTab]  { code.append($r1.code);})+)
+	|b1=block[symTab] { code = $b1.code; }
+    ;
+
+array_elem [SymbolTable symTab] returns [Operand3a id,ExpAttribute expAtt]
+    : ^(ARELEM  IDENT e1=expression[symTab]){
+		$id = symTab.lookup($IDENT.text);
+		if(TypeCheck.checkTab($id,$IDENT,$IDENT.text)){
+			$expAtt=e1;
+		}
+	}
     ;
 
 print_item [SymbolTable symTab] returns [Code3a code]
     : TEXT {
-	Data3a data = new Data3a($TEXT.text);
- 	code = Code3aGenerator.genArg(Inst3a.TAC.ARG,data.getLabel());
-	code.append(Code3aGenerator.genCall(Inst3a.TAC.CALL,new LabelSymbol("L4")));
-	code.appendData(data);
+		code = Code3aGenerator.genPrintText($TEXT.text);
 	}
     | e1=expression[symTab]{
-
-	code = Code3aGenerator.genArg(Inst3a.TAC.ARG,e1);
-	code.append(Code3aGenerator.genCall(Inst3a.TAC.CALL,new LabelSymbol("L2")) );
+		code = Code3aGenerator.genPrintExp(e1);
 	}
     ;
 
 read_item [SymbolTable symTab] returns [Code3a code]
     : IDENT {
 		Operand3a id = symTab.lookup($IDENT.text);
-		if(id!=null && id.isVarInteger())
+		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))
       		code = Code3aGenerator.genRead(id);
-		else 
-			Errors.unknownIdentifier($IDENT,$IDENT.text,"");
+		
 	}
 
     ;
@@ -253,11 +267,56 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
     }
   | IDENT
     {
-	  // verif si existe
+	  
 		Operand3a id = symTab.lookup($IDENT.text);
-		if(id!=null && id.isVarInteger())
+		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))
       		expAtt = new ExpAttribute(id.type, new Code3a(), symTab.lookup($IDENT.text));
-		else 
-			Errors.unknownIdentifier($IDENT,$IDENT.text,"") ;
+			
     }
+  |^(FCALL IDENT {
+		VarSymbol temp = SymbDistrib.newTemp();
+		Operand3a id = symTab.lookup($IDENT.text);
+		Code3a cod = new Code3a();
+		int k=0;
+	} 
+	(al=argument_list[symTab] {
+		cod.append($al.code);
+
+		k=$al.nb;
+	}
+	)? 
+	{
+		if(((FunctionType) id.type).getArguments().size()!=k){
+			System.out.println(k);
+			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
+			cod=null;
+		}
+		if(TypeCheck.checkFunctionInt(id,$IDENT,$IDENT.text)){
+			cod.append(Code3aGenerator.genCall(id,temp));
+			expAtt = new ExpAttribute(Type.INT, cod, temp);		
+		}
+			
+	}
+	)
+	| ae=array_elem[symTab] {
+      		VarSymbol temp = SymbDistrib.newTemp();
+     	 	Code3a cod = Code3aGenerator.genTabVar( temp, $ae.id, $ae.expAtt);
+      		expAtt = new ExpAttribute(Type.INT, cod, temp);
+    
+	}
   ;
+
+argument_list [SymbolTable symTab] returns [Code3a code,int nb]
+    : e1=expression[symTab] {
+		$code = e1.code; 
+		$code.append(Code3aGenerator.genArg(e1));
+		$nb=1;
+		} 
+	(e2=expression[symTab] {
+		$code.append(e2.code);
+		$code.append(Code3aGenerator.genArg(e2));
+		$nb++;
+		} )*
+    ;
+
+

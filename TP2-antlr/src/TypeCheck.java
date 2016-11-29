@@ -1,3 +1,5 @@
+import org.antlr.runtime.tree.CommonTree;
+
 /**
  * Type checking operations (NOTE: this class must be implemented by the
  * student; the methods indicated here can be seen as suggestions; note that
@@ -25,5 +27,94 @@ public class TypeCheck {
 			return Type.ERROR;
 		}
 	}
+	/**
+	*teste si l'ident est un tableau
+	*
+	**/
+	public static boolean checkTab(Operand3a op,CommonTree ident,String texte) {
+		if(op==null){
+			Errors.unknownIdentifier(ident,texte,"") ;
+			return false;
+		}
+		if( !(op.type instanceof ArrayType)){
+			Errors.incompatibleTypes(ident,Type.POINTER,op.type,"tableau attendu");
+			return false;
+			
+		}
+		
+
+		return true;		
+	}
+	/**
+	*teste si l'ident est une function
+	*
+	**/
+	public static boolean checkFunction(Operand3a op,CommonTree ident,String texte) {
+		if(op==null){
+			Errors.unknownIdentifier(ident,texte,"") ;
+			return false;
+		}
+		if( !(op.type instanceof FunctionType)){
+			Errors.incompatibleTypes(ident,Type.VOID,op.type,"Fonction attendu");
+			return false;
+			
+		}
+		
+
+		return true;		
+	}
+	/**
+	*teste si l'ident est une function qui retourne un int
+	*
+	**/
+	public static boolean checkFunctionInt(Operand3a op,CommonTree ident,String texte) {
+		if(op==null){
+			Errors.unknownIdentifier(ident,texte,"") ;
+			return false;
+		}
+		if( !(op.type instanceof FunctionType)){
+			Errors.incompatibleTypes(ident,Type.INT,op.type,"Fonction attendu");
+			return false;
+			
+		}
+		if(!(((FunctionType)op.type).getReturnType() == Type.INT)){
+			Errors.incompatibleTypes(ident,Type.INT,((FunctionType)op.type).getReturnType(),"Fonction "+texte+" doit retourner un INT");
+			return false;
+		}
+
+		return true;		
+	}
+	/**
+	*teste si l'ident est une variable int
+	*
+	**/
+	public static boolean checkIdentExp(Operand3a id,CommonTree ident,String texte) {
+		if(id==null){
+			Errors.unknownIdentifier(ident,texte,"") ;
+			return false;
+		}
+		if(!id.isVarInteger()){
+			Errors.incompatibleTypes(ident,Type.INT,id.type,"");
+			return false;
+		}
+		return true;		
+	}
+	/**
+	*teste si la déclaration d'une variable int n'est pas déja défini
+	*
+	**/
+	public static boolean checkIdentDecla(Operand3a id,CommonTree ident,String texte,SymbolTable symTab) {
+		
+		if(id!=null && id.getScope() == symTab.getScope() ){
+			Errors.redefinedIdentifier(ident,texte,"");
+			return false;
+		}
+		
+			
+			return true;
+					
+	}
+
+	
 
 }

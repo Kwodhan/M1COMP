@@ -1,11 +1,18 @@
 PROTO INT fuck(a,v)
+PROTO VOID fuck1(a,v)
+FUNC INT fuck(a,v){
+
+RETURN a*v
+}
 FUNC VOID main(a,b){
-INT n,i,sqd
+INT n,i,sqd,tab[11],tab2[12]
 
-n:=2+2
+tab:=tab2
+n:=2+2+tab[11]
 i:=n+2
+tab[1+1]:=n+1
 {INT a,b
-
+fuck(a,b+1)
 IF n-1
 THEN
 {
@@ -18,9 +25,9 @@ THEN
 	DONE
 }
 ELSE
-	n:=1
+	n:=fuck(1,2)
 FI
 i:=n+2
-
+RETURN 1+1
 }
 }

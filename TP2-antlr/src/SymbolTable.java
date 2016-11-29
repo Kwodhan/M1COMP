@@ -39,6 +39,7 @@ public class SymbolTable {
 
 		private Operand3a lookup(String name) {
 			Operand3a to = table.get(name);
+			
 			if ((to == null) && (parent != null))
 				// try again
 				return parent.lookup(name);

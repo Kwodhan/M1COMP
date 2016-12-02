@@ -253,8 +253,9 @@ public class Code3aGenerator {
 	}
 
 	public static Code3a genTabVar(Operand3a temp,Operand3a tab,ExpAttribute exp1){
-	System.out.println(exp1.code);
-	Code3a cod = exp1.code;
+	Code3a cod = Code3aGenerator.genVar(temp);
+
+	cod.append(exp1.code);
 	cod.append(new Code3a(new Inst3a(Inst3a.TAC.TABVAR,temp,tab, exp1.place)));
 	return cod;
 	}

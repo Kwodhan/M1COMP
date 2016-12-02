@@ -73,13 +73,23 @@ param_list [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
     ;
 
 param [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
-    : IDENT {int i = symTab.getScope()+1; // demande à la prof pour les scopes de function d'une ligne
-				VarSymbol op = new VarSymbol(Type.INT,$IDENT.text,i);
-				op.setParam();
-				ft1.extend(Type.INT);
-				Code3a cod = Code3aGenerator.genVar(op);
-				symTab.insert($IDENT.text,op);
-				code = cod;		
+    : IDENT {
+		int i = symTab.getScope()+1; // demande à la prof pour les scopes de function d'une ligne
+		VarSymbol op = new VarSymbol(Type.INT,$IDENT.text,i);
+		op.setParam();
+		ft1.extend(Type.INT);
+		Code3a cod = Code3aGenerator.genVar(op);
+		symTab.insert($IDENT.text,op);
+		code = cod;		
+	}
+	|^(ARRAY IDENT){
+		int i = symTab.getScope()+1;
+		VarSymbol op = new VarSymbol(Type.POINTER,$IDENT.text,i);
+		op.setParam();
+		ft1.extend(Type.POINTER);
+		Code3a cod = Code3aGenerator.genVar(op);
+		symTab.insert($IDENT.text,op);
+		code = cod;					
 	}
     ;
 
@@ -276,7 +286,7 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
   |^(FCALL IDENT {
 		VarSymbol temp = SymbDistrib.newTemp();
 		Operand3a id = symTab.lookup($IDENT.text);
-		Code3a cod = new Code3a();
+		Code3a cod = Code3aGenerator.genVar(temp);
 		int k=0;
 	} 
 	(al=argument_list[symTab] {
@@ -287,7 +297,6 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 	)? 
 	{
 		if(((FunctionType) id.type).getArguments().size()!=k){
-			System.out.println(k);
 			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
 			cod=null;
 		}
@@ -300,6 +309,7 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 	)
 	| ae=array_elem[symTab] {
       		VarSymbol temp = SymbDistrib.newTemp();
+			
      	 	Code3a cod = Code3aGenerator.genTabVar( temp, $ae.id, $ae.expAtt);
       		expAtt = new ExpAttribute(Type.INT, cod, temp);
     

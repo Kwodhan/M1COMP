@@ -1,33 +1,32 @@
-PROTO INT fuck(a,v)
-PROTO VOID fuck1(a,v)
-FUNC INT fuck(a,v){
-
-RETURN a*v
-}
-FUNC VOID main(a,b){
-INT n,i,sqd,tab[11],tab2[12]
-
-tab:=tab2
-n:=2+2+tab[11]
-i:=n+2
-tab[1+1]:=n+1
-{INT a,b
-fuck(a,b+1)
-IF n-1
-THEN
+PROTO INT fact(k)
+FUNC VOID main()
 {
-	WHILE 1
-	DO{
-	READ n
-	PRINT "hello :",n
-	n:=n+1
-	}
-	DONE
+INT n, i, t[11]
+PRINT "Input n between 0 and 11:\n"
+READ n
+i := 0
+WHILE n-i
+DO
+{
+t[i] := fact(i)
+i := i+1
 }
+DONE
+i := 0
+WHILE n-i
+DO
+{
+PRINT "f(", i, ") = ", t[i], "\n"
+i := i+1
+}
+DONE
+}
+FUNC INT fact(n)
+{
+IF n
+THEN
+RETURN n*fact(n-1)
 ELSE
-	n:=fuck(1,2)
+RETURN 1
 FI
-i:=n+2
-RETURN 1+1
-}
 }

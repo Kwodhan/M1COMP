@@ -22,9 +22,9 @@ if test "$1" = ""
 #génération du fichier de config                            
 sed -e "s/X_PROG/$1/g" ./template.cfg > nachos.cfg
 
-#lancement du simulateur                                    
-./nachos
+export PATH=/home/kwodhan/Documents/M1-Info/COMP/TP2/TP2-antlr/nachos:$PATH
 
+./nachos
 #clean                                                      
 rm -f DISK
 rm -f nachos.cfg

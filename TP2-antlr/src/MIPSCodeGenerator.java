@@ -710,9 +710,9 @@ public class MIPSCodeGenerator implements MIPSCGConstants {
 			out.println(courant.getLabel() + ":"); // the label of the string
 			t = courant.getText(); // the text
 
-			out.print(R_INDENT + ".ascii\t\"");
+			out.print(R_INDENT + ".ascii\t");
 
-			for (i = 0; i < t.length(); i++) {
+			for (i = 0; i < t.length()-1; i++) {
 				if (t.charAt(i) == '\\') {
 					i++;
 					switch (t.charAt(i)) {
@@ -730,6 +730,7 @@ public class MIPSCodeGenerator implements MIPSCGConstants {
 					out.print(t.charAt(i));
 				}
 			}
+			
 			out.println("\\000\"");
 
 		}

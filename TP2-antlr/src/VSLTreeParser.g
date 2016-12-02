@@ -24,19 +24,33 @@ unit [SymbolTable symTab] returns [Code3a code]
     ;
 
 function [SymbolTable symTab] returns [Code3a code]
+
+
     : ^(FUNC_KW t1=type IDENT {
+	
+	
 	LabelSymbol l1 = new LabelSymbol($IDENT.text);
 	code = Code3aGenerator.genLabel(l1);
 	code.append(Code3aGenerator.genBeginFunc());
 	FunctionType ft1 = new FunctionType($t1.returnType,false);
+	symTab.enterScope();
 	} 
 	pl=param_list[symTab,ft1] {
+	symTab.enterScope();
 	code.append($pl.code);
+	
 	}
 	b=body[symTab] {
-	code.append($b.code);
-	FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
-	symTab.insert($IDENT.text,fs1);
+	Operand3a id = symTab.lookup($IDENT.text);
+	if(TypeCheck.checkFunctionProto(id,$IDENT,$pl.nb)){
+		
+		code.append($b.code);
+		symTab.leaveScope();
+		FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
+		symTab.insert($IDENT.text,fs1);
+	}else{
+		code=null;
+	}
 	})
     ;
 
@@ -48,15 +62,20 @@ body [SymbolTable symTab] returns [Code3a code]
 	;
 
 proto [SymbolTable symTab] returns [Code3a code]
+
     : ^(PROTO_KW t1=type IDENT 
 	 {
 	LabelSymbol l1 = new LabelSymbol($IDENT.text);
 	FunctionType ft1 = new FunctionType($t1.returnType);
+	symTab.enterScope();
 	}
-	pl=param_list[symTab,ft1]{
+	param_list[symTab,ft1]{
+	
+ 	symTab.leaveScope();
 	FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
-
+	
 	symTab.insert($IDENT.text,fs1);
+	
 	})
     ;
 
@@ -66,15 +85,16 @@ type  returns [Type returnType]
     | VOID_KW {returnType =Type.VOID;}
     ;
 
-param_list [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
-@init { code = new Code3a();}
-    :^(PARAM (param[symTab,ft1] {code.append($param.code);})*) // il y en a au moins 1 parametre
+param_list [SymbolTable symTab,FunctionType ft1] returns [Code3a code,int nb]
+@init { $code = new Code3a();$nb=0;}
+    :^(PARAM (param[symTab,ft1] {$code.append($param.code);$nb++;})*) 
     | PARAM	// il n'y a pas de parametre
     ;
 
 param [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
     : IDENT {
-		int i = symTab.getScope()+1; // demande à la prof pour les scopes de function d'une ligne
+		
+		int i = symTab.getScope();
 		VarSymbol op = new VarSymbol(Type.INT,$IDENT.text,i);
 		op.setParam();
 		ft1.extend(Type.INT);
@@ -83,7 +103,7 @@ param [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
 		code = cod;		
 	}
 	|^(ARRAY IDENT){
-		int i = symTab.getScope()+1;
+		int i = symTab.getScope();
 		VarSymbol op = new VarSymbol(Type.POINTER,$IDENT.text,i);
 		op.setParam();
 		ft1.extend(Type.POINTER);
@@ -272,20 +292,23 @@ expression [SymbolTable symTab] returns [ExpAttribute expAtt]
 primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
   : INTEGER
     {
+
       ConstSymbol cs = new ConstSymbol(Integer.parseInt($INTEGER.text));
       expAtt = new ExpAttribute(Type.INT, new Code3a(), cs);
     }
   | IDENT
     {
-	  
 		Operand3a id = symTab.lookup($IDENT.text);
 		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))
-      		expAtt = new ExpAttribute(id.type, new Code3a(), symTab.lookup($IDENT.text));
+      		expAtt = new ExpAttribute(id.type, new Code3a(),id);
 			
     }
   |^(FCALL IDENT {
+		
+
 		VarSymbol temp = SymbDistrib.newTemp();
 		Operand3a id = symTab.lookup($IDENT.text);
+		
 		Code3a cod = Code3aGenerator.genVar(temp);
 		int k=0;
 	} 
@@ -295,21 +318,23 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 		k=$al.nb;
 	}
 	)? 
-	{
-		if(((FunctionType) id.type).getArguments().size()!=k){
-			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
-			cod=null;
-		}
+	{	
 		if(TypeCheck.checkFunctionInt(id,$IDENT,$IDENT.text)){
 			cod.append(Code3aGenerator.genCall(id,temp));
 			expAtt = new ExpAttribute(Type.INT, cod, temp);		
 		}
+		if(((FunctionType) id.type).getArguments().size()!=k){
+			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
+			cod=null;
+		}
+		
 			
 	}
 	)
 	| ae=array_elem[symTab] {
+
       		VarSymbol temp = SymbDistrib.newTemp();
-			
+
      	 	Code3a cod = Code3aGenerator.genTabVar( temp, $ae.id, $ae.expAtt);
       		expAtt = new ExpAttribute(Type.INT, cod, temp);
     

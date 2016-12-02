@@ -1,14 +1,19 @@
-PROTO INT fact(k)
+PROTO INT fact(n,k[])
 FUNC VOID main()
 {
-INT n, i, t[11]
+INT n, i, t[11],t2[5]
 PRINT "Input n between 0 and 11:\n"
 READ n
 i := 0
+t2[0] := 5
+t2[1] := 1
+t2[2] := 1
+t2[3] := 1
+t2[4] := 1
 WHILE n-i
 DO
 {
-t[i] := fact(i)
+t[i] := fact(i,t2)
 i := i+1
 }
 DONE
@@ -21,12 +26,15 @@ i := i+1
 }
 DONE
 }
-FUNC INT fact(n)
+FUNC INT fact(n,k[])
 {
+PRINT "tab : ",k[0],"\n"
+
 IF n
 THEN
-RETURN n*fact(n-1)
+RETURN n*fact(n-1,k)
 ELSE
 RETURN 1
 FI
 }
+

@@ -36,7 +36,7 @@ public class TypeCheck {
 			Errors.unknownIdentifier(ident,texte,"") ;
 			return false;
 		}
-		if( !(op.type instanceof ArrayType)){
+		if( !(op.type instanceof ArrayType) && op.type != Type.POINTER ){
 			Errors.incompatibleTypes(ident,Type.POINTER,op.type,"tableau attendu");
 			return false;
 			
@@ -93,10 +93,7 @@ public class TypeCheck {
 			Errors.unknownIdentifier(ident,texte,"") ;
 			return false;
 		}
-		if(!id.isVarInteger()){
-			Errors.incompatibleTypes(ident,Type.INT,id.type,"");
-			return false;
-		}
+
 		return true;		
 	}
 	/**
@@ -115,6 +112,23 @@ public class TypeCheck {
 					
 	}
 
-	
+	/**
+	*teste si la function est comforme avec son proto
+	*
+	**/
+	public static boolean checkFunctionProto(Operand3a op,CommonTree ident,int nb) {
+		if(op==null){
+			
+			return true;
+		}
+		if(((FunctionType) op.type).getArguments().size()!=nb){
+			Errors.miscError(ident,"Pas le bon nombre d'argument") ;
+			return false;
+		}
+	return true;
+
+		
+					
+	}
 
 }

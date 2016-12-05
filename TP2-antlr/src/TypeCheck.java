@@ -1,4 +1,5 @@
 import org.antlr.runtime.tree.CommonTree;
+import java.util.List;
 
 /**
  * Type checking operations (NOTE: this class must be implemented by the
@@ -96,6 +97,48 @@ public class TypeCheck {
 
 		return true;		
 	}
+	
+	public static boolean checkIdentAff(Operand3a id,ExpAttribute expAtt,CommonTree ident,String texte) {
+		if(id==null){
+			Errors.unknownIdentifier(ident,texte,"") ;
+			return false;
+		}
+		
+		if(!(id.type == Type.INT)){
+			Errors.incompatibleTypes(ident,Type.INT,id.type,"");
+			return false;
+		}
+		if(expAtt == null){
+			
+			return false;
+		}
+		
+		if(expAtt.type !=Type.INT && expAtt.type !=Type.I_CONST ){
+			Errors.incompatibleTypes(ident,Type.INT,expAtt.type,"");
+			return false;
+		}
+
+		return true;		
+	}
+	public static boolean checkArgument(Operand3a id,List<Type> types,CommonTree ident,String texte) {
+
+		List<Type> good= ((FunctionType)id.type).getArguments();
+		if(good.size() != types.size()){
+			Errors.miscError(ident,"proto non réspécter") ;
+			return false;
+		}
+		
+		for(int i=0;i<good.size();i++){
+			if(!good.get(i).equals(types.get(i))){
+				if(good.get(i).equals(Type.POINTER) && types.get(i) instanceof ArrayType ){
+					continue;
+				}
+				Errors.incompatibleTypes(ident,good.get(i),types.get(i),"");
+				return false;
+			}
+		}
+		return true;		
+	}
 	/**
 	*teste si la déclaration d'une variable int n'est pas déja défini
 	*
@@ -116,15 +159,46 @@ public class TypeCheck {
 	*teste si la function est comforme avec son proto
 	*
 	**/
-	public static boolean checkFunctionProto(Operand3a op,CommonTree ident,int nb) {
-		if(op==null){
-			
+	public static boolean checkFunctionProto(Operand3a proto,CommonTree ident,FunctionSymbol fs1) {
+		FunctionType type= ((FunctionType)fs1.type);
+		if(proto==null){
 			return true;
 		}
-		if(((FunctionType) op.type).getArguments().size()!=nb){
-			Errors.miscError(ident,"Pas le bon nombre d'argument") ;
+		if(!type.isCompatible((proto.type))){
+			Errors.miscError(ident,"proto non réspécter") ;
 			return false;
 		}
+	return true;
+
+		
+					
+	}
+	/**
+	*teste si la function est déja définit
+	*
+	**/
+	public static boolean checkFunctionDef(Operand3a op,CommonTree ident,String texte) {
+		if(op!=null && !((FunctionType)op.type).prototype){
+			Errors.redefinedIdentifier(ident,texte,"");
+			return false;
+		}
+		
+	return true;
+
+		
+					
+	}
+	
+	/**
+	*teste si la function est déja définit
+	*
+	**/
+	public static boolean checkReturn(ExpAttribute expAtt,CommonTree ident) {
+			if(expAtt.type !=Type.INT && expAtt.type !=Type.I_CONST ){
+			Errors.incompatibleTypes(ident,Type.INT,expAtt.type,"");
+			return false;
+		}
+		
 	return true;
 
 		

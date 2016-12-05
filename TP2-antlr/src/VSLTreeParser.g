@@ -27,10 +27,10 @@ function [SymbolTable symTab] returns [Code3a code]
 
 
     : ^(FUNC_KW t1=type IDENT {
-	
-	
+	Operand3a id = symTab.lookup($IDENT.text);
+	code = new Code3a();
 	LabelSymbol l1 = new LabelSymbol($IDENT.text);
-	code = Code3aGenerator.genLabel(l1);
+	code.append(Code3aGenerator.genLabel(l1));
 	code.append(Code3aGenerator.genBeginFunc());
 	FunctionType ft1 = new FunctionType($t1.returnType,false);
 	symTab.enterScope();
@@ -41,15 +41,14 @@ function [SymbolTable symTab] returns [Code3a code]
 	
 	}
 	b=body[symTab] {
-	Operand3a id = symTab.lookup($IDENT.text);
-	if(TypeCheck.checkFunctionProto(id,$IDENT,$pl.nb)){
-		
+
 		code.append($b.code);
 		symTab.leaveScope();
 		FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
+	if(TypeCheck.checkFunctionDef(id,$IDENT,$IDENT.text) && TypeCheck.checkFunctionProto(id,$IDENT,fs1) ){
 		symTab.insert($IDENT.text,fs1);
 	}else{
-		code=null;
+		code=new Code3a();
 	}
 	})
     ;
@@ -65,6 +64,8 @@ proto [SymbolTable symTab] returns [Code3a code]
 
     : ^(PROTO_KW t1=type IDENT 
 	 {
+	Operand3a id = symTab.lookup($IDENT.text);
+	
 	LabelSymbol l1 = new LabelSymbol($IDENT.text);
 	FunctionType ft1 = new FunctionType($t1.returnType);
 	symTab.enterScope();
@@ -73,9 +74,11 @@ proto [SymbolTable symTab] returns [Code3a code]
 	
  	symTab.leaveScope();
 	FunctionSymbol fs1 = new FunctionSymbol(l1,ft1);
-	
-	symTab.insert($IDENT.text,fs1);
-	
+	if(TypeCheck.checkFunctionDef(id,$IDENT,$IDENT.text)){
+		symTab.insert($IDENT.text,fs1);
+	}else {
+		code =new Code3a();	
+	}
 	})
     ;
 
@@ -132,12 +135,16 @@ decl_item [SymbolTable symTab] returns [Code3a code]
 		Operand3a id = symTab.lookup($IDENT.text);
 		if(TypeCheck.checkIdentDecla(id,$IDENT,$IDENT.text,symTab)){
 			code = Code3aGenerator.genDeclaINT($IDENT.text,symTab);
+		}else{
+			code =new Code3a();
 		}
 	}
 	|^(ARDECL IDENT INTEGER{
 		Operand3a id = symTab.lookup($IDENT.text);
 		if(TypeCheck.checkIdentDecla(id,$IDENT,$IDENT.text,symTab)){
 			code =  Code3aGenerator.genDeclaTab($IDENT.text,$INTEGER.int,symTab);
+		}else{
+			code =new Code3a();
 		}
 			
 	}
@@ -153,9 +160,10 @@ inst_list [SymbolTable symTab] returns [Code3a code]
 affectation [ExpAttribute expAtt,SymbolTable symTab] returns [Code3a code]
 	:
 	 (IDENT { Operand3a id = symTab.lookup($IDENT.text);
-		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))  	
-			code = Code3aGenerator.genAff(id,expAtt);	
-		
+			if(TypeCheck.checkIdentAff(id,expAtt,$IDENT,$IDENT.text))	
+				code = Code3aGenerator.genAff(id,expAtt);	
+			else
+				code = new Code3a();
 	} 
 	| (ae=array_elem[symTab]){
 	 code = Code3aGenerator.genAffTab($ae.id,$ae.expAtt,expAtt);
@@ -190,26 +198,35 @@ statement [SymbolTable symTab] returns [Code3a code]
 	| ^(FCALL_S IDENT {
 		Operand3a id = symTab.lookup($IDENT.text);
 		Code3a cod = new Code3a();
-		int k=0;
+		List<Type> types = new ArrayList<Type>();
+		
 	} 
 	(al=argument_list[symTab] {
 		cod.append($al.code);
-		k=$al.nb;
+		types = $al.types;
+		
 	}
 	)? 
 	{
-		if(((FunctionType) id.type).getArguments().size()!=k){
-			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
-			code=null;
-		}
-		if(TypeCheck.checkFunction(id,$IDENT,$IDENT.text)){
+		
+		if(TypeCheck.checkArgument(id,types,$IDENT,$IDENT.text) && TypeCheck.checkFunction(id,$IDENT,$IDENT.text)){
 			cod.append(Code3aGenerator.genCall(id));
 			code=cod;		
+		}else{
+			code = new Code3a();
 		}
 			
 	}
 	)
-	| ^(RETURN_KW e1=expression[symTab] {code.append(Code3aGenerator.genReturn(e1));} )
+	| ^(RETURN_KW e1=expression[symTab] {
+			if(TypeCheck.checkReturn(e1,$RETURN_KW))
+				code.append(Code3aGenerator.genReturn(e1));
+			else{
+				code = new Code3a();
+			}
+			} 
+			
+			)
 	| ^(PRINT_KW (p1=print_item[symTab] { code.append($p1.code);})+)
     | ^(READ_KW (r1=read_item[symTab]  { code.append($r1.code);})+)
 	|b1=block[symTab] { code = $b1.code; }
@@ -229,7 +246,11 @@ print_item [SymbolTable symTab] returns [Code3a code]
 		code = Code3aGenerator.genPrintText($TEXT.text);
 	}
     | e1=expression[symTab]{
+		if(e1!=null){
 		code = Code3aGenerator.genPrintExp(e1);
+		}else{
+		code = new Code3a();
+		}
 	}
     ;
 
@@ -238,9 +259,14 @@ read_item [SymbolTable symTab] returns [Code3a code]
 		Operand3a id = symTab.lookup($IDENT.text);
 		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))
       		code = Code3aGenerator.genRead(id);
+      	else{
+			code = new Code3a();
+		}
 		
 	}
-
+	| ae=array_elem[symTab]{
+		code = Code3aGenerator.genReadTab($ae.id,$ae.expAtt);
+	}
     ;
 
 
@@ -301,6 +327,7 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 		Operand3a id = symTab.lookup($IDENT.text);
 		if(TypeCheck.checkIdentExp(id,$IDENT,$IDENT.text))
       		expAtt = new ExpAttribute(id.type, new Code3a(),id);
+      	
 			
     }
   |^(FCALL IDENT {
@@ -310,23 +337,21 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 		Operand3a id = symTab.lookup($IDENT.text);
 		
 		Code3a cod = Code3aGenerator.genVar(temp);
-		int k=0;
+		List<Type> types = new ArrayList<Type>();
+
 	} 
 	(al=argument_list[symTab] {
 		cod.append($al.code);
+		types = $al.types;
 
-		k=$al.nb;
 	}
 	)? 
 	{	
-		if(TypeCheck.checkFunctionInt(id,$IDENT,$IDENT.text)){
+		if(TypeCheck.checkFunctionInt(id,$IDENT,$IDENT.text) && TypeCheck.checkArgument(id,types,$IDENT,$IDENT.text) ){
 			cod.append(Code3aGenerator.genCall(id,temp));
 			expAtt = new ExpAttribute(Type.INT, cod, temp);		
 		}
-		if(((FunctionType) id.type).getArguments().size()!=k){
-			Errors.miscError($IDENT,"Pas le bon nombre d'argument") ;
-			cod=null;
-		}
+		
 		
 			
 	}
@@ -334,23 +359,25 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 	| ae=array_elem[symTab] {
 
       		VarSymbol temp = SymbDistrib.newTemp();
-
      	 	Code3a cod = Code3aGenerator.genTabVar( temp, $ae.id, $ae.expAtt);
       		expAtt = new ExpAttribute(Type.INT, cod, temp);
     
 	}
   ;
 
-argument_list [SymbolTable symTab] returns [Code3a code,int nb]
-    : e1=expression[symTab] {
-		$code = e1.code; 
+argument_list [SymbolTable symTab] returns [Code3a code,List<Type> types]
+:
+	e1=expression[symTab] {
+		$types = new ArrayList<Type>();
+		$code = e1.code;
+		$types.add(e1.type);
 		$code.append(Code3aGenerator.genArg(e1));
-		$nb=1;
+
 		} 
 	(e2=expression[symTab] {
 		$code.append(e2.code);
+		$types.add(e2.type);
 		$code.append(Code3aGenerator.genArg(e2));
-		$nb++;
 		} )*
     ;
 

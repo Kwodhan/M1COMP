@@ -1,7 +1,7 @@
 export CLASSPATH=.:./src:./antlr-3.5.2-complete.jar
 
 
-for i in tests/testlevel3/*.vsl ; do
+for i in tests/testlevel4/*.vsl ; do
 	java VslComp $i > ./nachos/test/output.s
 	cd nachos
 	./asm2bin.sh output
@@ -19,16 +19,17 @@ for i in tests/testlevel3/*.vsl ; do
 	var2=$(echo $var | sed -e "s/ Machine halting Cleaning up...//g")
 	var2=$(echo $var2 | sed -e "s/Machine halting Cleaning up...//g")
 	result_string=$(echo $result_string)
-
 	if [[ "$result_string" == "$var2" ]]; then
 		echo -e "$i \n Good\n"
 	else
 		echo -e "$i \n bad\n"
-
+		echo $var2 > temp1
+		echo $result_string >temp2
 	fi
 	
 	
 done
+
 
 
 

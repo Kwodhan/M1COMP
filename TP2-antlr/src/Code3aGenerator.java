@@ -65,10 +65,12 @@ public class Code3aGenerator {
 	 * @param op
 	 *            must be a code op: Inst3a.TAC.XXX
 	 */
-	public static Code3a genAff( Operand3a temp, ExpAttribute exp1) {
-		Code3a cod = exp1.code;
-		cod.append(new Inst3a(Inst3a.TAC.COPY, temp, exp1.place));
-		return cod;
+	public static Code3a genAff( Operand3a id, ExpAttribute exp1) {
+	
+			Code3a cod = exp1.code;
+			cod.append(new Inst3a(Inst3a.TAC.COPY, id, exp1.place));
+			return cod;
+		
 	}
 	/**
 	 * Generate code for a aff operation
@@ -76,10 +78,10 @@ public class Code3aGenerator {
 	 * @param op
 	 *            must be a code op: Inst3a.TAC.XXX
 	 */
-	public static Code3a genAffTab( Operand3a temp, ExpAttribute exp1,ExpAttribute exp2) {
+	public static Code3a genAffTab( Operand3a id, ExpAttribute exp1,ExpAttribute exp2) {
 		Code3a cod = exp1.code;
 		cod.append(exp2.code);
-		cod.append(new Inst3a(Inst3a.TAC.VARTAB, temp,exp1.place, exp2.place));
+		cod.append(new Inst3a(Inst3a.TAC.VARTAB, id,exp1.place, exp2.place));
 		return cod;
 	}
 /**
@@ -176,6 +178,17 @@ public class Code3aGenerator {
 		return cod;
 	}
 
+	public static Code3a genReadTab(Operand3a v1,ExpAttribute exp1) {
+		VarSymbol temp = SymbDistrib.newTemp();
+		Code3a cod = Code3aGenerator.genVar(temp);
+		cod.append(new Code3a(new Inst3a(Inst3a.TAC.CALL, temp,SymbDistrib.builtinRead)));
+		cod.append(exp1.code);
+		cod.append(new Inst3a(Inst3a.TAC.VARTAB, v1,exp1.place, temp));
+			
+
+		return cod;
+	}
+
 	public static Code3a genEndFunc() {
 		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.ENDFUNC, null));	
 
@@ -197,11 +210,13 @@ public class Code3aGenerator {
 	}
 
 	public static Code3a genPrintExp(ExpAttribute e1){
-		
+
+			
 		Code3a code = e1.code;
 		code.append(Code3aGenerator.genArg(e1));
 		code.append(Code3aGenerator.genCall(SymbDistrib.builtinPrintN) );
 		return code;
+		
 	}
 
 
@@ -234,7 +249,7 @@ public class Code3aGenerator {
 	}
 
 	public static Code3a genParam(String texte,SymbolTable symTab,FunctionType ft1){
-		int i = symTab.getScope()+1; // demande à la prof pour les scopes de function d'une ligne
+		int i = symTab.getScope()+1; 
 		VarSymbol op = new VarSymbol(Type.INT,texte,i);
 		op.setParam();
 		ft1.extend(Type.INT);

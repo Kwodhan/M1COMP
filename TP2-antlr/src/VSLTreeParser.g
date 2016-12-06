@@ -55,8 +55,8 @@ function [SymbolTable symTab] returns [Code3a code]
 
 body [SymbolTable symTab] returns [Code3a code]
 	:^(BODY s1=statement[symTab]{
-	code=$s1.code;
-	code.append(Code3aGenerator.genEndFunc());
+		code=$s1.code;
+		code.append(Code3aGenerator.genEndFunc());
 	})
 	;
 
@@ -88,9 +88,9 @@ type  returns [Type returnType]
     | VOID_KW {returnType =Type.VOID;}
     ;
 
-param_list [SymbolTable symTab,FunctionType ft1] returns [Code3a code,int nb]
-@init { $code = new Code3a();$nb=0;}
-    :^(PARAM (param[symTab,ft1] {$code.append($param.code);$nb++;})*) 
+param_list [SymbolTable symTab,FunctionType ft1] returns [Code3a code]
+@init { $code = new Code3a();}
+    :^(PARAM (param[symTab,ft1] {$code.append($param.code);})*) 
     | PARAM	// il n'y a pas de parametre
     ;
 
@@ -180,7 +180,7 @@ statement [SymbolTable symTab] returns [Code3a code]
 		code = Code3aGenerator.genIfz(Inst3a.TAC.IFZ,l1,e1);  
 		code.append($st1.code);
 		LabelSymbol l2 = SymbDistrib.newLabel();
-		code.append(Code3aGenerator.genGoto(Inst3a.TAC.GOTO, l2));
+		code.append(Code3aGenerator.genGoto( l2));
 		code.append(Code3aGenerator.genLabel(l1));
 		
 	}  
@@ -261,8 +261,7 @@ read_item [SymbolTable symTab] returns [Code3a code]
       		code = Code3aGenerator.genRead(id);
       	else{
 			code = new Code3a();
-		}
-		
+		}	
 	}
 	| ae=array_elem[symTab]{
 		code = Code3aGenerator.genReadTab($ae.id,$ae.expAtt);
@@ -351,21 +350,17 @@ primary_exp [SymbolTable symTab] returns [ExpAttribute expAtt]
 			cod.append(Code3aGenerator.genCall(id,temp));
 			expAtt = new ExpAttribute(Type.INT, cod, temp);		
 		}
-		
-		
-			
+					
 	}
 	)
 	| ae=array_elem[symTab] {
-
       		VarSymbol temp = SymbDistrib.newTemp();
      	 	Code3a cod = Code3aGenerator.genTabVar( temp, $ae.id, $ae.expAtt);
       		expAtt = new ExpAttribute(Type.INT, cod, temp);
-    
 	}
   ;
 
-argument_list [SymbolTable symTab] returns [Code3a code,List<Type> types]
+argument_list [SymbolTable symTab] returns [Code3a code,List<Type> types] // retourne la liste des types pour vérification
 :
 	e1=expression[symTab] {
 		$types = new ArrayList<Type>();

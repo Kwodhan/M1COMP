@@ -9,7 +9,6 @@ import java.util.List;
  */
 public class TypeCheck {
 
-	// an Example
 	/**
 	 * Type checking for a binary operation - in VSL+: integer operations only!
 	 */
@@ -86,7 +85,7 @@ public class TypeCheck {
 		return true;		
 	}
 	/**
-	*teste si l'ident est une variable int
+	*teste si l'ident est une variable qui existe
 	*
 	**/
 	public static boolean checkIdentExp(Operand3a id,CommonTree ident,String texte) {
@@ -97,7 +96,11 @@ public class TypeCheck {
 
 		return true;		
 	}
-	
+	/**
+	 * 
+	 * teste si affectation est conforme
+	 * 
+	 */
 	public static boolean checkIdentAff(Operand3a id,ExpAttribute expAtt,CommonTree ident,String texte) {
 		if(id==null){
 			Errors.unknownIdentifier(ident,texte,"") ;
@@ -108,8 +111,7 @@ public class TypeCheck {
 			Errors.incompatibleTypes(ident,Type.INT,id.type,"");
 			return false;
 		}
-		if(expAtt == null){
-			
+		if(expAtt == null){ // evite de renvoyer une erreur quand l'analyse se passe mal ultérieurement 
 			return false;
 		}
 		
@@ -120,6 +122,13 @@ public class TypeCheck {
 
 		return true;		
 	}
+	/**
+	 * 
+	 * 
+	 * test si les arguments sont conforme à la définition de la function 
+	 * 
+	 * 
+	 */ 
 	public static boolean checkArgument(Operand3a id,List<Type> types,CommonTree ident,String texte) {
 
 		List<Type> good= ((FunctionType)id.type).getArguments();
@@ -190,7 +199,7 @@ public class TypeCheck {
 	}
 	
 	/**
-	*teste si la function est déja définit
+	*teste si le return renvoie bien un nombre et pas un tableau ou autre 
 	*
 	**/
 	public static boolean checkReturn(ExpAttribute expAtt,CommonTree ident) {

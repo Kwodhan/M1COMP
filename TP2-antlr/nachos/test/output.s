@@ -9,7 +9,7 @@ $LC0:
 	.globl main
 	.ent main
 main:
-	 addiu	$sp,$sp,-56
+	 addiu	$sp,$sp,-60
 	 sw	$31,16($29)
 	 sw	$16,24($29)
 	 sw	$17,28($29)
@@ -19,11 +19,19 @@ main:
 	 sw	$21,44($29)
 	 sw	$22,48($29)
 	 sw	$23,52($29)
-# label L10
-L10:
-# ifz 1 goto L11
+# var i
+# i = 1
        li   $8, 1
-	beq  $8,0,L11
+# arg i
+       sw  $8,56($29)
+	 sw   $8,0($29)
+	move   $4,$8
+# call L2
+       move $5,$4
+       lui   $4,%hi($LC0)
+       addiu   $4,$4,%lo($LC0)
+	 jal   n_printf
+	 nop
 # return 0
        li   $2, 0
 	 lw	$16,20($29)
@@ -35,13 +43,9 @@ L10:
 	 lw	$22,44($29)
 	 lw	$23,48($29)
 	 lw	$31,16($29)
-	 addiu	$sp,$sp,56
+	 addiu	$sp,$sp,60
 	 jr  $31
 	 nop
-# goto L10
-	j  L10
-# label L11
-L11:
 # endfunc 
 	 lw	$16,20($29)
 	 lw	$17,24($29)
@@ -52,7 +56,7 @@ L11:
 	 lw	$22,44($29)
 	 lw	$23,48($29)
 	 lw	$31,16($29)
-	 addiu	$sp,$sp,56
+	 addiu	$sp,$sp,60
 	 jr  $31
 	 nop
 	.end main

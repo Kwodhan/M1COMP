@@ -27,12 +27,6 @@ public class Code3aGenerator {
 		return cod;
 	}
 
-	public static Code3a genPrimaryTab( Operand3a temp, ExpAttribute exp1,ExpAttribute exp2) {
-		Code3a cod = exp1.code;
-		cod.append(exp2.code);
-		cod.append(new Inst3a(Inst3a.TAC.VARTAB, temp,exp1.place, exp2.place));
-		return cod;
-	}
 	/**
 	 * Generate code for a binary operation
 	 * 
@@ -54,16 +48,18 @@ public class Code3aGenerator {
 		Inst3a i = new Inst3a(Inst3a.TAC.VAR, t);
 		return new Code3a(i);
 	}
-
-	public static Code3a genVarTab(Operand3a t) {
-		Inst3a i = new Inst3a(Inst3a.TAC.VAR, t);
-		return new Code3a(i);
+	public static Code3a genTab(String texte,int length,SymbolTable symTab){
+		int i = symTab.getScope();
+		VarSymbol op = new VarSymbol(new  ArrayType(Type.INT,length),texte,i);
+		Code3a cod = Code3aGenerator.genVar(op);
+		symTab.insert(texte,op);
+		return cod;
 	}
 	/**
-	 * Generate code for a aff operation
+	 * Affectation sur les variables int
 	 * 
 	 * @param op
-	 *            must be a code op: Inst3a.TAC.XXX
+	 *           
 	 */
 	public static Code3a genAff( Operand3a id, ExpAttribute exp1) {
 	
@@ -73,7 +69,7 @@ public class Code3aGenerator {
 		
 	}
 	/**
-	 * Generate code for a aff operation
+	 * Affectation sur les variables tableau
 	 * 
 	 * @param op
 	 *            must be a code op: Inst3a.TAC.XXX
@@ -99,11 +95,9 @@ public class Code3aGenerator {
 	/**
 	 * Generate code for a goto operation
 	 * 
-	 * @param op
-	 *            must be a code op: Inst3a.TAC.XXX
 	 */
-	public static Code3a genGoto(Inst3a.TAC op, LabelSymbol ls1) {
-		Code3a cod = new Code3a(new Inst3a(op, ls1));
+	public static Code3a genGoto(LabelSymbol ls1) {
+		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.GOTO, ls1));
 		
 
 		return cod;
@@ -111,8 +105,6 @@ public class Code3aGenerator {
 /**
 	 * Generate code for a label operation
 	 * 
-	 * @param op
-	 *            must be a code op: Inst3a.TAC.XXX
 	 */
 	public static Code3a genLabel( LabelSymbol ls1) {
 		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.LABEL, ls1));
@@ -124,8 +116,6 @@ public class Code3aGenerator {
 	/**
 	 * Generate code for a arg operation
 	 * 
-	 * @param op
-	 *            must be a code op: Inst3a.TAC.XXX
 	 */
 	public static Code3a genArg( LabelSymbol ls1) {
 		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.ARG, ls1));
@@ -144,8 +134,6 @@ public class Code3aGenerator {
      /**
 	 * Generate code for a call operation
 	 * 
-	 * @param op
-	 *            must be a code op: Inst3a.TAC.XXX
 	 */
 	public static Code3a genCall( Operand3a ls1) {
 		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.CALL, null,ls1));
@@ -153,6 +141,18 @@ public class Code3aGenerator {
 
 		return cod;
 	}
+	
+	public static Code3a genCall( Operand3a ls1,Operand3a ls2) {
+		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.CALL, ls2,ls1));
+		
+
+		return cod;
+	}
+	/**
+	 * 
+	 * Code pour un return
+	 * 
+	 */
 	public static Code3a genReturn( ExpAttribute exp1) {
 		Code3a cod = exp1.code;
 		cod.append(new Code3a(new Inst3a(Inst3a.TAC.RETURN, exp1.place)));
@@ -160,24 +160,21 @@ public class Code3aGenerator {
 
 		return cod;
 	}
-	public static Code3a genCall( Operand3a ls1,Operand3a ls2) {
-		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.CALL, ls2,ls1));
-		
-
-		return cod;
-	}
-	public static Code3a genArgument(Inst3a.TAC op, Operand3a ls1,Operand3a ls2) {
-		Code3a cod = new Code3a(new Inst3a(op, ls2,ls1));
-		
-
-		return cod;
-	}
+	
+	/**
+	 * 
+	 * Code pour un READ d'une variable int
+	 * 
+	 */
 	public static Code3a genRead(Operand3a v1) {
 		Code3a cod = new Code3a(new Inst3a(Inst3a.TAC.CALL, v1,SymbDistrib.builtinRead));	
 
 		return cod;
 	}
-
+	/**
+	 * Code pour un READ d'une variable tableau
+	 * 
+	 */
 	public static Code3a genReadTab(Operand3a v1,ExpAttribute exp1) {
 		VarSymbol temp = SymbDistrib.newTemp();
 		Code3a cod = Code3aGenerator.genVar(temp);
@@ -200,7 +197,13 @@ public class Code3aGenerator {
 
 		return cod;
 	}
-
+	/**
+	 * 
+	 * 
+	 *Code pour un PRINT d'un texte 
+	 * 
+	 * 
+	 */
 	public static Code3a genPrintText(String texte){
 		Data3a data = new Data3a(texte);
 	 	Code3a code = Code3aGenerator.genArg(data.getLabel());
@@ -208,7 +211,13 @@ public class Code3aGenerator {
 		code.appendData(data);
 		return code;
 	}
-
+	/**
+	 * 
+	 * 
+	 *Code pour un PRINT d'une expression
+	 * 
+	 * 
+	 */
 	public static Code3a genPrintExp(ExpAttribute e1){
 
 			
@@ -219,19 +228,29 @@ public class Code3aGenerator {
 		
 	}
 
-
+	/**
+	 * 
+	 * 
+	 *Code pour un while
+	 * 
+	 * 
+	 */
 	public static Code3a genWhile(ExpAttribute e1,Code3a codeSta){
 		LabelSymbol l1 = SymbDistrib.newLabel();
 		LabelSymbol l2 = SymbDistrib.newLabel();
 		Code3a code = Code3aGenerator.genLabel(l1);
 		code.append(Code3aGenerator.genIfz(Inst3a.TAC.IFZ,l2,e1)); 
 		code.append(codeSta);
-		code.append(Code3aGenerator.genGoto(Inst3a.TAC.GOTO, l1));
+		code.append(Code3aGenerator.genGoto( l1));
 		code.append(Code3aGenerator.genLabel(l2));
 		return code; 
 	}
 
-
+	/**
+	 * 
+	 * Déclaration d'une variable INT
+	 * 
+	 */
 	public static Code3a genDeclaINT(String texte,SymbolTable symTab){
 		int i = symTab.getScope();
 		VarSymbol op = new VarSymbol(Type.INT,texte,i);
@@ -239,7 +258,11 @@ public class Code3aGenerator {
 		symTab.insert(texte,op);
 		return cod;
 	}
-
+	/**
+	 * 
+	 * Déclaration d'une variable TABLEAU
+	 * 
+	 */
 	public static Code3a genDeclaTab(String texte,int length,SymbolTable symTab){
 		int i = symTab.getScope();
 		VarSymbol op = new VarSymbol(new  ArrayType(Type.INT,length),texte,i);
@@ -247,7 +270,11 @@ public class Code3aGenerator {
 		symTab.insert(texte,op);
 		return cod;
 	}
-
+	/**
+	 * 
+	 * Code pour les paramettre lors de la définition d'une fonction
+	 * 
+	 */
 	public static Code3a genParam(String texte,SymbolTable symTab,FunctionType ft1){
 		int i = symTab.getScope()+1; 
 		VarSymbol op = new VarSymbol(Type.INT,texte,i);
@@ -259,17 +286,14 @@ public class Code3aGenerator {
 		return code;
 	}
 
-	public static Code3a genTab(String texte,int length,SymbolTable symTab){
-		int i = symTab.getScope();
-		VarSymbol op = new VarSymbol(new  ArrayType(Type.INT,length),texte,i);
-		Code3a cod = Code3aGenerator.genVar(op);
-		symTab.insert(texte,op);
-		return cod;
-	}
-
+	
+	/**
+	 * 
+	 * tableau dans une expression
+	 * 
+	 */ 
 	public static Code3a genTabVar(Operand3a temp,Operand3a tab,ExpAttribute exp1){
 	Code3a cod = Code3aGenerator.genVar(temp);
-
 	cod.append(exp1.code);
 	cod.append(new Code3a(new Inst3a(Inst3a.TAC.TABVAR,temp,tab, exp1.place)));
 	return cod;

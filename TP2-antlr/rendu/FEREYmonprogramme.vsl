@@ -1,0 +1,142 @@
+PROTO INT attaquer(attaque,i,j)
+PROTO INT isnotfinish(tab[],size,vie)
+PROTO INT getexp(tab[],size)
+PROTO INT plusgrand(n,m)
+PROTO VOID afficherdonjon(tab[],size)
+
+
+// But du jeu : tuer tout les ennemies dans le donjon étages 
+//======================================
+FUNC VOID main()
+{
+
+INT tab[10],i,max,choix,exp,mort[10],vie
+vie:=10
+exp:=1
+i:=10
+max:=i
+WHILE (i) DO{
+	tab[max-i]:=i+((i)/4)
+	i:=i-1
+}
+
+DONE 
+PRINT "Bienvenue dans le Donjon\n"
+WHILE ( isnotfinish(tab,10,vie) ) DO {
+	afficherdonjon(tab,10)
+	PRINT "Quel étage du donjon ?\n"
+	READ choix
+	tab[choix]:=attaquer(exp,choix,tab[choix])
+	IF (tab[choix]) THEN {
+		vie:=vie-1
+	}
+	FI
+	exp:=getexp(tab,10)+1
+	PRINT "vous avez ",vie," PV\n"
+	PRINT "vous avez ",exp," expérience\n\n"
+	
+}	
+DONE
+
+
+}
+// on attaque un ennemie
+//======================================
+FUNC INT attaquer(attaque,choix,pv){
+INT temp,n
+PRINT "On attaque l'ennemie ",choix,"\n"
+
+
+
+IF ( plusgrand(pv,attaque) )THEN{
+	PRINT "il lui reste ",pv-attaque," PV\n"
+	RETURN pv-attaque
+}
+ELSE{
+	PRINT "L'ennemie ",choix," est mort\n"
+	RETURN 0
+}
+FI
+
+}
+// si tous les ennemies sont mort ou que le héro est mort
+//======================================
+FUNC INT isnotfinish(tab[],size,vie){
+
+INT i
+
+IF (vie) THEN
+	vie:=vie
+ELSE{
+	PRINT "vous etes mort\n"
+	RETURN 0
+}
+FI
+	
+i:=size
+WHILE (i) DO {
+IF(tab[size-i]) THEN{
+		RETURN 1
+}
+FI
+
+i:=i-1
+
+}
+DONE
+RETURN 0
+}
+// l'expérience en fonction des ennemies tués
+//======================================
+FUNC INT getexp(tab[],size){
+
+INT i,return
+i:=size
+return:=0
+WHILE (i) DO {
+IF(tab[size-i]) THEN{
+	return:=return	
+}
+ELSE{
+	return:=return+1
+}
+FI
+
+i:=i-1
+
+}
+DONE
+RETURN return
+}
+// comparaison entre deux entiers
+//======================================
+FUNC INT plusgrand(n,m )
+{
+  INT continue, nn, mm
+
+  continue := n*m
+  nn := n
+  mm := m
+  WHILE continue
+    DO
+	{ 
+	  mm := mm-1
+          nn := nn-1
+          continue := nn*mm
+	}
+    DONE
+  IF nn THEN RETURN 1 ELSE RETURN 0 FI
+}
+// affichage du donjon
+//======================================
+FUNC VOID afficherdonjon(tab[],size){
+INT i
+i:=size
+WHILE (i) DO{
+	PRINT "étage ",size-i," : ennemie :",tab[size-i]," PV\n"
+	i:=i-1
+}
+DONE
+
+}
+
